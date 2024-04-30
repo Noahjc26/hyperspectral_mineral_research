@@ -1,0 +1,3 @@
+"0",""
+"0","# Add other plots with 'add = TRUE' to overlay them"
+"0","plot(area_1300_1600, breaks = c(17-3.26,17,17+3.26), col = c(""red"",""red""), legend = FALSE, add = T)"

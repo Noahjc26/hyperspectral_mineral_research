@@ -1,0 +1,1 @@
+"0","plot(area_1750_2100, breaks = c(22.3-1.45,22.3,22.3+1.45), col = c(""blue"",""blue""), add = TRUE, legend = FALSE)"

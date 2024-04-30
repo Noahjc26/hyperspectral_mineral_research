@@ -1,0 +1,84 @@
+# Load required libraries
+library(terra)
+library(raster)
+library(tidyverse)
+library(janitor)
+library(future)
+library(future.apply)
+library(doParallel)
+library(grid)
+library(gridExtra)
+library(circular)
+
+# Source external functions
+source("../mineral_research/functions.R")
+
+# Define file paths
+base_dir <- "../AVIRIS/2023/AV320231005t185153/"
+rast_paths <- c("area_750_1250.tif", "area_1300_1600.tif", "area_1600_2200.tif",
+                "area_1750_2100.tif", "area_2050_2250.tif", "area_2150_2250.tif",
+                "area_2275_2375.tif", "area_2250_2450.tif", "area_2200_2400.tif")
+
+# Load and store rasters in a list
+area_rasts <- lapply(file.path(base_dir, rast_paths), rast)
+
+# Define desired extent
+desired_extent <- ext(402000, 404500, 4246000, 4248000)
+
+# Load and crop additional datasets
+cropped_153 <- rast(file.path(base_dir, "L2A_OE/cropped_1.tif")) %>%
+  crop(desired_extent)
+
+# Load scores and AVIRIS 2019, perform PCA, and plot results
+scores <- rast(file.path(base_dir, "scores.tif"))
+aviris_2019 <- rast("../AVIRIS/2019/rectified.tif") %>%
+  crop(desired_extent) %>%
+  prcomp() %>%
+  predict()
+
+plot(prcomp(aviris_2019), main = "PCA 2019 AVIRIS")
+
+# Load and manipulate geologic data
+malmsten_cropped <- rast("../Quads/Malmsten_peak_quad/cropped_malmsten.tif")
+shape <- vect("../Quads/Malmsten_peak_quad/units_malmsten.shp") %>%
+  project(crs(scores)) %>%
+  crop(desired_extent)
+
+
+# Plotting various maps and RGB images
+plotRGB(scores, 1, 2, 3, axes = TRUE, stretch = "lin", main = "2023 AVIRIS (3m resolution) PCA RGB")
+plotRGB(scores, 1, 2, 3, axes = TRUE, stretch = "hist", main = "2019 AVIRIS (14m resolution) PCA RGB")
+plot(malmsten_cropped, main = "Geologic map")
+plot(shape, col = unit_colors[shape$unit], add = TRUE)
+legend("top", legend = names(unit_colors), fill = unit_colors, cex = 0.5, inset = c(0, 0.3))
+
+# Load and prepare spectral mineral data
+mineral_dir <- "../usgs_spectral_library/usgs_splib07 (1)/ASCIIdata/ASCIIdata_splib07b_cvAVIRISc2014/ChapterM_Minerals/"
+minerals <- list.files(mineral_dir, full.names = TRUE) %>%
+  lapply(read.csv) %>%
+  bind_rows() %>%
+  clean_names() %>%
+  mutate(Bands = row_number(), wavelength = seq(from = 400, by = 9.375, length.out = 224))
+
+# Cleaning and preparing mineral data
+minerals <- minerals %>%
+  rename_with(~ sub(".*?_", "", .)) %>%
+  rename_with(~ str_extract(., "[^_]*_[^_]*[^_]*")) %>%
+  select(-matches("negative_value_columns"))  # Example placeholder for negative value columns
+
+# Absorption features and plotting
+data_subset_long <- pivot_longer(minerals, cols = -c(Band, wavelength), names_to = "Sample_Mineral", values_to = "Reflectance") %>%
+  separate(Sample_Mineral, into = c("Sample", "Mineral"), sep = "_") %>%
+  mutate(Wavelength = as.numeric(wavelength))
+
+# Call custom plotting and analysis functions
+results <- visualize_area_all_minerals(data_subset_long, wavelength1 = 750, wavelength2 = 1250) %>%
+  arrange(desc(Area))
+
+# Print mean area by mineral
+mean_area_by_mineral <- results %>%
+  group_by(Mineral) %>%
+  summarize(mean_area = mean(Area), sd_area = sd(Area)) %>%
+  arrange(desc(mean_area))
+
+print(mean_area_by_mineral)

@@ -1,0 +1,179 @@
+library(terra)
+library(leaflet)
+
+
+files_path <- list.files("../../landsat//LE07_CU_008008_20010718_20210426_02_SR/", pattern = ".TIF", full.names = TRUE)
+
+
+ls_7 <- rast(files_path[5:10])
+
+ls_7 <- project(ls_7,"epsg:32612")
+
+
+plotRGB(ls_7, r = 3, g = 2, b = 1, stretch = "lin", axes = T)
+
+
+desired_extent <- ext(410000, 490000, 4410000, 4500000)
+
+c_ls_7 <- crop(ls_7,desired_extent)
+
+writeRaster(c_ls_7,"../../Data_Course_CHRISTENSEN/GEOG_490R/task_8/LE07_CU_008008_20010718_20210426_02_SR/cropped_landsat7.tif")
+
+
+
+?plotRGB
+#start
+c_ls_7 <- rast("../../landsat/LE07_CU_008008_20010718_20210426_02_SR/cropped_landsat7.tif")
+
+MNDWI <- (c_ls_7[[2]] - c_ls_7[[5]]) / (c_ls_7[[2]] + c_ls_7[[5]]) > 0
+NDBI <- (c_ls_7[[5]] - c_ls_7[[4]]) / (c_ls_7[[5]] + c_ls_7[[4]]) > 0
+NDVI <- (c_ls_7[[4]] - c_ls_7[[3]]) / (c_ls_7[[4]] + c_ls_7[[3]]) > 0.2
+
+par(mfrow = c(1,2), mar = c(5, 4, 4, 2))
+#For Landsat 7 data, MNDWI = (Band 2 – Band 5) / (Band 2 + Band 5)
+plotRGB(c_ls_7, r = 3, g = 2, b = 1, stretch = "lin", axes = T, grid = T)
+plot(MNDWI, col = c("transparent","cadetblue1"), main = "Classified image by MNDWI, NDBI, and NDVI", legend = F)
+plot(NDVI, add = TRUE,col = c("transparent","darkgreen"), legend = F)
+plot(NDBI, add = TRUE, col = c("transparent","tan"),legend = F) 
+
+legend(x= 410000, y= 4500000, legend = c("MNDWI > 0", "NDBI > 0", "NDVI > 0.2"), fill = c("lightblue", "tan", "darkgreen"))
+
+
+# Set up the plot
+plot(MNDWI, col = "cadetblue1", alpha = 0.5)  # Set color and transparency for MNDWI
+plot(NDBI, add = TRUE, col = "green", alpha = 0.5)  # Add NDBI with color and transparency
+plot(NDVI, add = TRUE, col = "red", alpha = 0.5)  # Add NDVI with color and transparency
+
+# Add a legend
+legend("topright", legend = c("MNDWI", "NDBI", "NDVI"), fill = c("blue", "green", "red"))
+
+#For Landsat 7 data, NDBI = (Band 5 – Band 4) / (Band 5 + Band 4)
+plot((c_ls_7[[5]] - c_ls_7[[4]]) / (c_ls_7[[5]] + c_ls_7[[4]]) > 0, col = c("transparent","tan"), add = T, legend = F)
+
+#In Landsat 4-7, NDVI = (Band 4 – Band 3) / (Band 4 + Band 3).
+plot((c_ls_7[[4]] - c_ls_7[[3]]) / (c_ls_7[[4]] + c_ls_7[[3]]) > 0.3, col = c("transparent","darkgreen"), add = T,legend = F)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+cities <- (vect('../Data_Course_CHRISTENSEN/GEOG_490R/task_8/UtahMunicipalBoundaries_-4816321826181792416/Municipalities.shp'))
+orem <- cities[cities$NAME == "Orem"]
+
+orem <- project(orem,"epsg:32612")
+
+
+
+
+#### in class
+
+dem <- rast("../../DEMs/timp/output_USGS1m.tif")
+plot(dem, col = heat.colors(10))
+
+cropped <- crop(dem,c(442000,449000,4468000,4474000))
+
+plot(cropped)    
+
+c1 <- crop(dem,c(442000,448000,4470000,4474000))
+
+writeRaster(c2,"../../DEMs/dem_2.tif", overwrite = TRUE)
+c2 <- crop(dem,c(443000,449000,4467000,4471000))
+
+aspect <- terrain(mosaic(c1,c2),"aspect")
+slope <- terrain(mosaic(c1,c2),"slope")
+
+plot(aspect, col = rev(grey.colors(100)))
+
+c1 <- rast("../../DEMs/dem_1.tif")
+
+c2 <- rast("../../DEMs/dem_2.tif")
+
+c1 <- aggregate(c1,5)
+c2 <- aggregate(c222,2)
+
+
+mos <- mosaic(c1,c2)
+
+
+plot(mosaic(rc1,c2))
+
+plot(c1)
+plot(c2)
+
+density(c2)
+
+?terrain
+c3 <- aggregate(c2, 1)
+
+######
+# Load the libraries
+library(leaflet)
+
+# Set the center and zoom level for Utah
+utah_location <- c(lat = 39.3200, lon = -111.8883)
+zoom_level <- 7
+
+# Set the UTM coordinates for the larger extent
+larger_extent_utm <- list(easting_min = 380000, easting_max = 420500, northing_min = 4220000, northing_max = 4260000)
+
+
+# Create an sf object with a Point geometry for UTM coordinates
+larger_extent_points_utm <- st_sfc(st_point(c(larger_extent_utm$easting_min, larger_extent_utm$northing_min)),
+                                   st_point(c(larger_extent_utm$easting_max, larger_extent_utm$northing_max))) %>%
+  st_set_crs("+proj=utm +zone=12 +datum=WGS84")
+
+
+# Transform UTM coordinates to latitude and longitude
+larger_extent_points_utm <- st_set_crs(larger_extent_points_utm, "+proj=utm +zone=12 +datum=WGS84")
+marysvale_points_utm <- st_set_crs(marysvale_points_utm, "+proj=utm +zone=12 +datum=WGS84")
+
+larger_extent_points_lonlat <- st_transform(larger_extent_points_utm, "+proj=longlat +datum=WGS84")
+marysvale_points_lonlat <- st_transform(marysvale_points_utm, "+proj=longlat +datum=WGS84")
+
+# Extract the transformed coordinates
+larger_extent <- st_bbox(larger_extent_points_lonlat)
+
+# Create a leaflet map with HOT tile layer
+leaflet()%>%
+  addProviderTiles("OpenStreetMap.HOT") %>%
+  addRasterImage(mos, col = grey.colors(5)) %>% 
+  addMiniMap() %>% 
+
+addRectangles(
+  lng1 = , lat1 = ,
+  lng2 = , lat2 = ,
+  fillColor = "transparent",
+  color = "red",
+  weight = 3
+)
+
+?bruh
+?addRectangles
+r <- rast(ncol = 10, nrow = 10)
+
+values(r) = sample(1:100,100)
+
+r[48]
+r[5,8]
+r[25]
+
+
+snow <- rast("../../../../Downloads/NDSI_test.tif")
+
+
+plot((snow[[3]] - snow[[6]]) / (snow[[3]] + snow[[6]]) > 0.4)
+
+
+plotRGB(snow,r=4,g=3,b=2,stretch = "lin")
+        

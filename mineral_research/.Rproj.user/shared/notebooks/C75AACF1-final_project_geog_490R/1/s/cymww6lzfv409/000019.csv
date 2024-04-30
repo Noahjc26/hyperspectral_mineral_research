@@ -1,0 +1,42 @@
+"0","# Assuming your data frame is called data_subset"
+"0","data_subset_long <- pivot_longer(data_subset, "
+"0","                                 cols = -c(Band, wavelength),"
+"0","                                 names_to = ""Sample_Mineral"", "
+"0","                                 values_to = ""Reflectance"")"
+"0",""
+"0","# Extract sample and mineral names"
+"0","data_subset_long <- separate(data_subset_long, Sample_Mineral, into = c(""Sample"", ""Mineral""), sep = ""_"")"
+"0",""
+"0","# Convert wavelength column to numeric"
+"0","data_subset_long$wavelength <- as.numeric(data_subset_long$wavelength)"
+"0",""
+"0","# Rename the 'wavelength' column to 'Wavelength'"
+"0","data_subset_long <- rename(data_subset_long, Wavelength = wavelength)"
+"0",""
+"0","visualize_area_df_mineral(data_subset_long, mineral_name = ""halloysite"",wavelength1 = 1300,wavelength2 = 1600)"
+"1","$plots
+"
+"1","$plots$`1412`
+"
+"1","
+"
+"1","$plots$`1418`
+"
+"1","
+"
+"1","$plots$`1423`
+"
+"1","
+"
+"1","$plots$`1430`
+"
+"1","
+"
+"1","$plots$`1428`
+"
+"1","
+"
+"1","
+"
+"1","$areas_df
+"

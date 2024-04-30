@@ -1,0 +1,4 @@
+"0",""
+"0",""
+"0","# Plot the lineaments"
+"0","plot(shade(slope*pi/180, aspect*pi/180, angle = 10, direction = 270), col = grey(0:100/100), legend = F)"
